@@ -1,4 +1,5 @@
 <x-guest-layout>
+    <h1 class="text-xl font-semibold mb-5">Tạo tài khoản cá nhân</h1>
     <form method="POST" action="{{ route('register') }}">
         @csrf
 

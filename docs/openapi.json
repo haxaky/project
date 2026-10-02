@@ -1,0 +1,4195 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "Chat Cá Nhân — API",
+        "version": "1.0.0",
+        "description": "Tài liệu các endpoint dữ liệu và thao tác của ứng dụng Laravel/Chatify. Chat giao diện dùng phiên đăng nhập (cookie) và CSRF; nhiều trường phản hồi chứa HTML. API Chatify dùng Sanctum Bearer token và trả dữ liệu JSON. Đăng nhập/đăng ký hiện trả chuyển hướng HTTP 302, không cấp Bearer token. Các trang HTML thuần và endpoint debug không nằm trong tài liệu này. Try it out thực hiện thao tác thật trên dữ liệu của tài khoản đang xác thực."
+    },
+    "servers": [
+        {
+            "url": "/",
+            "description": "Máy chủ đang mở Swagger"
+        }
+    ],
+    "tags": [
+        {
+            "name": "Chat giao diện",
+            "description": "Cookie phiên + CSRF. Đăng nhập cùng trình duyệt trước khi thử."
+        },
+        {
+            "name": "API Chatify",
+            "description": "Authorize bằng Sanctum token. Cookie đăng nhập giao diện không thay thế Bearer token trong cấu hình hiện tại."
+        },
+        {
+            "name": "Tài khoản",
+            "description": "Đăng nhập, đăng ký, mật khẩu và hồ sơ. Thành công thường trả HTTP 302."
+        }
+    ],
+    "paths": {
+        "/messages/idInfo": {
+            "post": {
+                "tags": [
+                    "Chat giao diện"
+                ],
+                "summary": "Lấy thông tin người dùng",
+                "operationId": "post_messages_idInfo",
+                "description": "Người dùng không tồn tại: fetch và user_avatar là null.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "favorite": {
+                                            "type": "boolean"
+                                        },
+                                        "fetch": {
+                                            "allOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/User"
+                                                }
+                                            ],
+                                            "nullable": true
+                                        },
+                                        "user_avatar": {
+                                            "type": "string",
+                                            "nullable": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại; dùng ID của mình để ghi chú."
+                                    }
+                                },
+                                "required": [
+                                    "id"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại; dùng ID của mình để ghi chú."
+                                    }
+                                },
+                                "required": [
+                                    "id"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/sendMessage": {
+            "post": {
+                "tags": [
+                    "Chat giao diện"
+                ],
+                "summary": "Gửi tin nhắn hoặc tệp",
+                "operationId": "post_messages_sendMessage",
+                "description": "Lỗi định dạng/kích thước tệp có thể trả HTTP 200 với error.status = 1. id phải tồn tại. message hoặc file phải được cung cấp.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "200"
+                                        },
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "enum": [
+                                                        0,
+                                                        1
+                                                    ]
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                }
+                                            }
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "description": "Đoạn HTML được giao diện chat hiển thị."
+                                        },
+                                        "tempID": {
+                                            "type": "string",
+                                            "nullable": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại; dùng ID của mình để ghi chú."
+                                    },
+                                    "message": {
+                                        "type": "string",
+                                        "example": "Xin chào!",
+                                        "description": "Nội dung tin nhắn. Bắt buộc khi không gửi file.",
+                                        "maxLength": 5000
+                                    },
+                                    "temporaryMsgId": {
+                                        "type": "string",
+                                        "example": "temp_1",
+                                        "description": "ID tạm phía client, được trả lại trong tempID."
+                                    },
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "description": "Định dạng: png, jpg, jpeg, gif, zip, rar, txt. Kích thước nhỏ hơn 150 MB; còn chịu giới hạn upload của PHP."
+                                    }
+                                },
+                                "required": [
+                                    "id"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/fetchMessages": {
+            "post": {
+                "tags": [
+                    "Chat giao diện"
+                ],
+                "summary": "Lấy lịch sử tin nhắn",
+                "operationId": "post_messages_fetchMessages",
+                "description": "",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "total": {
+                                            "type": "integer"
+                                        },
+                                        "last_page": {
+                                            "type": "integer"
+                                        },
+                                        "last_message_id": {
+                                            "type": "string",
+                                            "format": "uuid",
+                                            "nullable": true
+                                        },
+                                        "messages": {
+                                            "type": "string",
+                                            "description": "Đoạn HTML được giao diện chat hiển thị."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại; dùng ID của mình để ghi chú."
+                                    },
+                                    "page": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "default": 1
+                                    },
+                                    "per_page": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "default": 30
+                                    }
+                                },
+                                "required": [
+                                    "id"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại; dùng ID của mình để ghi chú."
+                                    },
+                                    "page": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "default": 1
+                                    },
+                                    "per_page": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "default": 30
+                                    }
+                                },
+                                "required": [
+                                    "id"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/makeSeen": {
+            "post": {
+                "tags": [
+                    "Chat giao diện"
+                ],
+                "summary": "Đánh dấu tin nhắn đã đọc",
+                "operationId": "post_messages_makeSeen",
+                "description": "",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "integer",
+                                            "enum": [
+                                                0,
+                                                1
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại; dùng ID của mình để ghi chú."
+                                    }
+                                },
+                                "required": [
+                                    "id"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại; dùng ID của mình để ghi chú."
+                                    }
+                                },
+                                "required": [
+                                    "id"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/getContacts": {
+            "get": {
+                "tags": [
+                    "Chat giao diện"
+                ],
+                "summary": "Lấy danh sách cuộc trò chuyện",
+                "operationId": "get_messages_getContacts",
+                "description": "",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "total": {
+                                            "type": "integer"
+                                        },
+                                        "last_page": {
+                                            "type": "integer"
+                                        },
+                                        "contacts": {
+                                            "type": "string",
+                                            "description": "Đoạn HTML được giao diện chat hiển thị."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 30
+                        }
+                    }
+                ]
+            }
+        },
+        "/messages/search": {
+            "get": {
+                "tags": [
+                    "Chat giao diện"
+                ],
+                "summary": "Tìm người dùng theo tên",
+                "operationId": "get_messages_search",
+                "description": "",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "total": {
+                                            "type": "integer"
+                                        },
+                                        "last_page": {
+                                            "type": "integer"
+                                        },
+                                        "records": {
+                                            "type": "string",
+                                            "nullable": true,
+                                            "description": "HTML danh sách tìm kiếm."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "input",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "An"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 30
+                        }
+                    }
+                ]
+            }
+        },
+        "/messages/star": {
+            "post": {
+                "tags": [
+                    "Chat giao diện"
+                ],
+                "summary": "Bật/tắt yêu thích người dùng",
+                "operationId": "post_messages_star",
+                "description": "Mỗi lần gọi đảo trạng thái yêu thích.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "integer",
+                                            "enum": [
+                                                0,
+                                                1
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "user_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại."
+                                    }
+                                },
+                                "required": [
+                                    "user_id"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "user_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại."
+                                    }
+                                },
+                                "required": [
+                                    "user_id"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/favorites": {
+            "post": {
+                "tags": [
+                    "Chat giao diện"
+                ],
+                "summary": "Lấy danh sách yêu thích",
+                "operationId": "post_messages_favorites",
+                "description": "",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "count": {
+                                            "type": "integer"
+                                        },
+                                        "favorites": {
+                                            "oneOf": [
+                                                {
+                                                    "type": "string",
+                                                    "description": "Đoạn HTML được giao diện chat hiển thị."
+                                                },
+                                                {
+                                                    "type": "integer",
+                                                    "enum": [
+                                                        0
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/shared": {
+            "post": {
+                "tags": [
+                    "Chat giao diện"
+                ],
+                "summary": "Lấy ảnh đã chia sẻ",
+                "operationId": "post_messages_shared",
+                "description": "",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "shared": {
+                                            "type": "string",
+                                            "description": "Đoạn HTML được giao diện chat hiển thị."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "user_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại."
+                                    }
+                                },
+                                "required": [
+                                    "user_id"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "user_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại."
+                                    }
+                                },
+                                "required": [
+                                    "user_id"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/deleteConversation": {
+            "post": {
+                "tags": [
+                    "Chat giao diện"
+                ],
+                "summary": "Xóa cuộc trò chuyện",
+                "operationId": "post_messages_deleteConversation",
+                "description": "Xóa tin nhắn và tệp của cuộc trò chuyện theo hành vi Chatify.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "deleted": {
+                                            "type": "integer",
+                                            "enum": [
+                                                0,
+                                                1
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại; dùng ID của mình để ghi chú."
+                                    }
+                                },
+                                "required": [
+                                    "id"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại; dùng ID của mình để ghi chú."
+                                    }
+                                },
+                                "required": [
+                                    "id"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/updateSettings": {
+            "post": {
+                "tags": [
+                    "Chat giao diện"
+                ],
+                "summary": "Đổi giao diện hoặc ảnh đại diện",
+                "operationId": "post_messages_updateSettings",
+                "description": "status phản ánh cập nhật avatar; có thể là 0 khi chỉ đổi màu/chế độ. Kiểm tra error để biết lỗi upload.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "integer",
+                                            "enum": [
+                                                0,
+                                                1
+                                            ]
+                                        },
+                                        "error": {
+                                            "type": "integer",
+                                            "enum": [
+                                                0,
+                                                1
+                                            ]
+                                        },
+                                        "message": {
+                                            "oneOf": [
+                                                {
+                                                    "type": "string"
+                                                },
+                                                {
+                                                    "type": "integer",
+                                                    "enum": [
+                                                        0
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "dark_mode": {
+                                        "type": "string",
+                                        "enum": [
+                                            "dark",
+                                            "light"
+                                        ]
+                                    },
+                                    "messengerColor": {
+                                        "type": "string",
+                                        "example": "#2180f3"
+                                    },
+                                    "avatar": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "description": "Ảnh png, jpg, jpeg, gif; nhỏ hơn 150 MB."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/setActiveStatus": {
+            "post": {
+                "tags": [
+                    "Chat giao diện"
+                ],
+                "summary": "Cập nhật trạng thái hoạt động",
+                "operationId": "post_messages_setActiveStatus",
+                "description": "Input status > 0 là online. Response status là số dòng được cập nhật.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "status": {
+                                        "type": "integer",
+                                        "enum": [
+                                            0,
+                                            1
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "status"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "status": {
+                                        "type": "integer",
+                                        "enum": [
+                                            0,
+                                            1
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "status"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/chat/auth": {
+            "post": {
+                "tags": [
+                    "Chat giao diện"
+                ],
+                "summary": "Xác thực kênh Pusher",
+                "operationId": "post_messages_chat_auth",
+                "description": "Chỉ dùng khi CHAT_TRANSPORT=pusher. Chế độ polling mặc định trả 404.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "auth": {
+                                            "type": "string"
+                                        },
+                                        "channel_data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Pusher chưa được bật.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Không được phép xác thực kênh.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "channel_name": {
+                                        "type": "string",
+                                        "example": "private-chatify.1"
+                                    },
+                                    "socket_id": {
+                                        "type": "string",
+                                        "example": "1234.5678"
+                                    }
+                                },
+                                "required": [
+                                    "channel_name",
+                                    "socket_id"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "channel_name": {
+                                        "type": "string",
+                                        "example": "private-chatify.1"
+                                    },
+                                    "socket_id": {
+                                        "type": "string",
+                                        "example": "1234.5678"
+                                    }
+                                },
+                                "required": [
+                                    "channel_name",
+                                    "socket_id"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/download/{fileName}": {
+            "get": {
+                "tags": [
+                    "Chat giao diện"
+                ],
+                "summary": "Tải tệp đính kèm",
+                "operationId": "get_messages_download_fileName",
+                "description": "",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/octet-stream": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Tệp không tồn tại.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "fileName",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Tên lưu trữ (UUID + đuôi), không phải tên tệp gốc."
+                    }
+                ]
+            }
+        },
+        "/messages/poll": {
+            "post": {
+                "tags": [
+                    "Chat giao diện"
+                ],
+                "summary": "Đồng bộ tin nhắn bằng polling",
+                "operationId": "post_messages_poll",
+                "description": "",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "total": {
+                                            "type": "integer"
+                                        },
+                                        "signature": {
+                                            "type": "string",
+                                            "description": "SHA-256 của dữ liệu tin nhắn để phát hiện thay đổi."
+                                        },
+                                        "messages": {
+                                            "type": "string",
+                                            "description": "Đoạn HTML được giao diện chat hiển thị."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại; dùng ID của mình để ghi chú."
+                                    },
+                                    "limit": {
+                                        "type": "integer",
+                                        "minimum": 30,
+                                        "maximum": 10000,
+                                        "example": 30
+                                    }
+                                },
+                                "required": [
+                                    "id",
+                                    "limit"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại; dùng ID của mình để ghi chú."
+                                    },
+                                    "limit": {
+                                        "type": "integer",
+                                        "minimum": 30,
+                                        "maximum": 10000,
+                                        "example": 30
+                                    }
+                                },
+                                "required": [
+                                    "id",
+                                    "limit"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/deleteMessage": {
+            "post": {
+                "tags": [
+                    "Chat giao diện"
+                ],
+                "summary": "Xóa một tin nhắn",
+                "operationId": "post_messages_deleteMessage",
+                "description": "",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "deleted": {
+                                            "type": "integer",
+                                            "enum": [
+                                                0,
+                                                1
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "description": "UUID tin nhắn."
+                                    }
+                                },
+                                "required": [
+                                    "id"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "description": "UUID tin nhắn."
+                                    }
+                                },
+                                "required": [
+                                    "id"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/updateContacts": {
+            "post": {
+                "tags": [
+                    "Chat giao diện"
+                ],
+                "summary": "Lấy HTML mới của một liên hệ",
+                "operationId": "post_messages_updateContacts",
+                "description": "Trả 401 nếu user_id không tồn tại.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "contactItem": {
+                                            "type": "string",
+                                            "description": "Đoạn HTML được giao diện chat hiển thị."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "user_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại."
+                                    }
+                                },
+                                "required": [
+                                    "user_id"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "user_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại."
+                                    }
+                                },
+                                "required": [
+                                    "user_id"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/api/idInfo": {
+            "post": {
+                "tags": [
+                    "API Chatify"
+                ],
+                "summary": "Lấy tài khoản hiện tại",
+                "operationId": "post_messages_api_idInfo",
+                "description": "Controller API hiện trả trực tiếp auth()->user(); không xử lý id/type và không trả favorite/fetch/user_avatar.",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Vượt giới hạn request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/api/sendMessage": {
+            "post": {
+                "tags": [
+                    "API Chatify"
+                ],
+                "summary": "Gửi tin nhắn hoặc tệp",
+                "operationId": "post_messages_api_sendMessage",
+                "description": "Lỗi định dạng/kích thước tệp có thể trả HTTP 200 với error.status = 1. Controller API của thư viện không có cùng validation id/message như controller giao diện.",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string",
+                                            "example": "200"
+                                        },
+                                        "error": {
+                                            "type": "object",
+                                            "properties": {
+                                                "status": {
+                                                    "type": "integer",
+                                                    "enum": [
+                                                        0,
+                                                        1
+                                                    ]
+                                                },
+                                                "message": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                }
+                                            }
+                                        },
+                                        "message": {
+                                            "oneOf": [
+                                                {
+                                                    "$ref": "#/components/schemas/ParsedMessage"
+                                                },
+                                                {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "$ref": "#/components/schemas/ParsedMessage"
+                                                    },
+                                                    "maxItems": 0
+                                                }
+                                            ]
+                                        },
+                                        "tempID": {
+                                            "type": "string",
+                                            "nullable": true
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Vượt giới hạn request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại; dùng ID của mình để ghi chú."
+                                    },
+                                    "message": {
+                                        "type": "string",
+                                        "example": "Xin chào!",
+                                        "description": "Nội dung tin nhắn."
+                                    },
+                                    "temporaryMsgId": {
+                                        "type": "string",
+                                        "example": "temp_1",
+                                        "description": "ID tạm phía client, được trả lại trong tempID."
+                                    },
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "description": "Định dạng: png, jpg, jpeg, gif, zip, rar, txt. Kích thước nhỏ hơn 150 MB; còn chịu giới hạn upload của PHP."
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "example": "user",
+                                        "description": "Tham số controller API đọc; model tin nhắn hiện không lưu type."
+                                    }
+                                },
+                                "required": [
+                                    "id"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/api/fetchMessages": {
+            "post": {
+                "tags": [
+                    "API Chatify"
+                ],
+                "summary": "Lấy lịch sử tin nhắn",
+                "operationId": "post_messages_api_fetchMessages",
+                "description": "",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "total": {
+                                            "type": "integer"
+                                        },
+                                        "last_page": {
+                                            "type": "integer"
+                                        },
+                                        "last_message_id": {
+                                            "type": "string",
+                                            "format": "uuid",
+                                            "nullable": true
+                                        },
+                                        "messages": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Message"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Vượt giới hạn request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại; dùng ID của mình để ghi chú."
+                                    },
+                                    "page": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "default": 1
+                                    },
+                                    "per_page": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "default": 30
+                                    }
+                                },
+                                "required": [
+                                    "id"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại; dùng ID của mình để ghi chú."
+                                    },
+                                    "page": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "default": 1
+                                    },
+                                    "per_page": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "default": 30
+                                    }
+                                },
+                                "required": [
+                                    "id"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/api/makeSeen": {
+            "post": {
+                "tags": [
+                    "API Chatify"
+                ],
+                "summary": "Đánh dấu tin nhắn đã đọc",
+                "operationId": "post_messages_api_makeSeen",
+                "description": "",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "integer",
+                                            "enum": [
+                                                0,
+                                                1
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Vượt giới hạn request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại; dùng ID của mình để ghi chú."
+                                    }
+                                },
+                                "required": [
+                                    "id"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại; dùng ID của mình để ghi chú."
+                                    }
+                                },
+                                "required": [
+                                    "id"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/api/getContacts": {
+            "get": {
+                "tags": [
+                    "API Chatify"
+                ],
+                "summary": "Lấy danh sách cuộc trò chuyện",
+                "operationId": "get_messages_api_getContacts",
+                "description": "",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "total": {
+                                            "type": "integer"
+                                        },
+                                        "last_page": {
+                                            "type": "integer"
+                                        },
+                                        "contacts": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/User"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Vượt giới hạn request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 30
+                        }
+                    }
+                ]
+            }
+        },
+        "/messages/api/search": {
+            "get": {
+                "tags": [
+                    "API Chatify"
+                ],
+                "summary": "Tìm người dùng theo tên",
+                "operationId": "get_messages_api_search",
+                "description": "",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "total": {
+                                            "type": "integer"
+                                        },
+                                        "last_page": {
+                                            "type": "integer"
+                                        },
+                                        "records": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/User"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Vượt giới hạn request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "input",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "example": "An"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "default": 30
+                        }
+                    }
+                ]
+            }
+        },
+        "/messages/api/star": {
+            "post": {
+                "tags": [
+                    "API Chatify"
+                ],
+                "summary": "Bật/tắt yêu thích người dùng",
+                "operationId": "post_messages_api_star",
+                "description": "Mỗi lần gọi đảo trạng thái yêu thích.",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "integer",
+                                            "enum": [
+                                                0,
+                                                1
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Vượt giới hạn request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "user_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại."
+                                    }
+                                },
+                                "required": [
+                                    "user_id"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "user_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại."
+                                    }
+                                },
+                                "required": [
+                                    "user_id"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/api/favorites": {
+            "post": {
+                "tags": [
+                    "API Chatify"
+                ],
+                "summary": "Lấy danh sách yêu thích",
+                "operationId": "post_messages_api_favorites",
+                "description": "",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "total": {
+                                            "type": "integer"
+                                        },
+                                        "favorites": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Favorite"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Vượt giới hạn request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/api/shared": {
+            "post": {
+                "tags": [
+                    "API Chatify"
+                ],
+                "summary": "Lấy ảnh đã chia sẻ",
+                "operationId": "post_messages_api_shared",
+                "description": "",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "shared": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "description": "Tên tệp ảnh lưu trữ theo controller hiện tại."
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Vượt giới hạn request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "user_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại."
+                                    }
+                                },
+                                "required": [
+                                    "user_id"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "user_id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại."
+                                    }
+                                },
+                                "required": [
+                                    "user_id"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/api/deleteConversation": {
+            "post": {
+                "tags": [
+                    "API Chatify"
+                ],
+                "summary": "Xóa cuộc trò chuyện",
+                "operationId": "post_messages_api_deleteConversation",
+                "description": "Xóa tin nhắn và tệp của cuộc trò chuyện theo hành vi Chatify.",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "deleted": {
+                                            "type": "integer",
+                                            "enum": [
+                                                0,
+                                                1
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Vượt giới hạn request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại; dùng ID của mình để ghi chú."
+                                    }
+                                },
+                                "required": [
+                                    "id"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "id": {
+                                        "type": "integer",
+                                        "example": 1,
+                                        "description": "ID người dùng đối thoại; dùng ID của mình để ghi chú."
+                                    }
+                                },
+                                "required": [
+                                    "id"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/api/updateSettings": {
+            "post": {
+                "tags": [
+                    "API Chatify"
+                ],
+                "summary": "Đổi giao diện hoặc ảnh đại diện",
+                "operationId": "post_messages_api_updateSettings",
+                "description": "status phản ánh cập nhật avatar; có thể là 0 khi chỉ đổi màu/chế độ. Kiểm tra error để biết lỗi upload.",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "integer",
+                                            "enum": [
+                                                0,
+                                                1
+                                            ]
+                                        },
+                                        "error": {
+                                            "type": "integer",
+                                            "enum": [
+                                                0,
+                                                1
+                                            ]
+                                        },
+                                        "message": {
+                                            "oneOf": [
+                                                {
+                                                    "type": "string"
+                                                },
+                                                {
+                                                    "type": "integer",
+                                                    "enum": [
+                                                        0
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Vượt giới hạn request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "dark_mode": {
+                                        "type": "string",
+                                        "enum": [
+                                            "dark",
+                                            "light"
+                                        ]
+                                    },
+                                    "messengerColor": {
+                                        "type": "string",
+                                        "example": "#2180f3"
+                                    },
+                                    "avatar": {
+                                        "type": "string",
+                                        "format": "binary",
+                                        "description": "Ảnh png, jpg, jpeg, gif; nhỏ hơn 150 MB."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/api/setActiveStatus": {
+            "post": {
+                "tags": [
+                    "API Chatify"
+                ],
+                "summary": "Cập nhật trạng thái hoạt động",
+                "operationId": "post_messages_api_setActiveStatus",
+                "description": "Input status > 0 là online. Response status là số dòng được cập nhật.",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Vượt giới hạn request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "status": {
+                                        "type": "integer",
+                                        "enum": [
+                                            0,
+                                            1
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "status"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "status": {
+                                        "type": "integer",
+                                        "enum": [
+                                            0,
+                                            1
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "status"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/api/chat/auth": {
+            "post": {
+                "tags": [
+                    "API Chatify"
+                ],
+                "summary": "Xác thực kênh Pusher",
+                "operationId": "post_messages_api_chat_auth",
+                "description": "Chỉ dùng khi CHAT_TRANSPORT=pusher. Chế độ polling mặc định trả 404.",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "auth": {
+                                            "type": "string"
+                                        },
+                                        "channel_data": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Vượt giới hạn request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Pusher chưa được bật.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Không được phép xác thực kênh.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "channel_name": {
+                                        "type": "string",
+                                        "example": "private-chatify.1"
+                                    },
+                                    "socket_id": {
+                                        "type": "string",
+                                        "example": "1234.5678"
+                                    }
+                                },
+                                "required": [
+                                    "channel_name",
+                                    "socket_id"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "channel_name": {
+                                        "type": "string",
+                                        "example": "private-chatify.1"
+                                    },
+                                    "socket_id": {
+                                        "type": "string",
+                                        "example": "1234.5678"
+                                    }
+                                },
+                                "required": [
+                                    "channel_name",
+                                    "socket_id"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/messages/api/download/{fileName}": {
+            "get": {
+                "tags": [
+                    "API Chatify"
+                ],
+                "summary": "Lấy URL tải tệp",
+                "operationId": "get_messages_api_download_fileName",
+                "description": "",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "file_name": {
+                                            "type": "string"
+                                        },
+                                        "download_path": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Vượt giới hạn request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Tệp không tồn tại.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "fileName",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "Tên lưu trữ (UUID + đuôi), không phải tên tệp gốc."
+                    }
+                ]
+            }
+        },
+        "/login": {
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Đăng nhập",
+                "operationId": "post_login",
+                "description": "Endpoint web: thành công trả 302 và cập nhật phiên/flash nếu có. Với Accept: application/json, lỗi validation trả 422; lỗi broker đặt lại mật khẩu vẫn có thể trả 302. Trình duyệt tự theo chuyển hướng nên Swagger có thể hiển thị HTML của trang đích.",
+                "security": [],
+                "responses": {
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "302": {
+                        "description": "Chuyển hướng sau xử lý.",
+                        "headers": {
+                            "Location": {
+                                "description": "URL đích.",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "ban@example.com",
+                                        "maxLength": 255
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    },
+                                    "remember": {
+                                        "type": "boolean",
+                                        "default": false
+                                    }
+                                },
+                                "required": [
+                                    "email",
+                                    "password"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "ban@example.com",
+                                        "maxLength": 255
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    },
+                                    "remember": {
+                                        "type": "boolean",
+                                        "default": false
+                                    }
+                                },
+                                "required": [
+                                    "email",
+                                    "password"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/register": {
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Đăng ký tài khoản",
+                "operationId": "post_register",
+                "description": "Endpoint web: thành công trả 302 và cập nhật phiên/flash nếu có. Với Accept: application/json, lỗi validation trả 422; lỗi broker đặt lại mật khẩu vẫn có thể trả 302. Trình duyệt tự theo chuyển hướng nên Swagger có thể hiển thị HTML của trang đích.",
+                "security": [],
+                "responses": {
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "302": {
+                        "description": "Chuyển hướng sau xử lý.",
+                        "headers": {
+                            "Location": {
+                                "description": "URL đích.",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "maxLength": 255
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "ban@example.com",
+                                        "maxLength": 255
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "minLength": 8
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "minLength": 8
+                                    }
+                                },
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password",
+                                    "password_confirmation"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "maxLength": 255
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "ban@example.com",
+                                        "maxLength": 255
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "minLength": 8
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "minLength": 8
+                                    }
+                                },
+                                "required": [
+                                    "name",
+                                    "email",
+                                    "password",
+                                    "password_confirmation"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/logout": {
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Đăng xuất",
+                "operationId": "post_logout",
+                "description": "Endpoint web: thành công trả 302 và cập nhật phiên/flash nếu có. Với Accept: application/json, lỗi validation trả 422; lỗi broker đặt lại mật khẩu vẫn có thể trả 302. Trình duyệt tự theo chuyển hướng nên Swagger có thể hiển thị HTML của trang đích.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "302": {
+                        "description": "Chuyển hướng sau xử lý.",
+                        "headers": {
+                            "Location": {
+                                "description": "URL đích.",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/forgot-password": {
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Yêu cầu đặt lại mật khẩu",
+                "operationId": "post_forgot_password",
+                "description": "Endpoint web: thành công trả 302 và cập nhật phiên/flash nếu có. Với Accept: application/json, lỗi validation trả 422; lỗi broker đặt lại mật khẩu vẫn có thể trả 302. Trình duyệt tự theo chuyển hướng nên Swagger có thể hiển thị HTML của trang đích.",
+                "security": [],
+                "responses": {
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "302": {
+                        "description": "Chuyển hướng sau xử lý.",
+                        "headers": {
+                            "Location": {
+                                "description": "URL đích.",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "ban@example.com",
+                                        "maxLength": 255
+                                    }
+                                },
+                                "required": [
+                                    "email"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "ban@example.com",
+                                        "maxLength": 255
+                                    }
+                                },
+                                "required": [
+                                    "email"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/reset-password": {
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Đặt lại mật khẩu",
+                "operationId": "post_reset_password",
+                "description": "Endpoint web: thành công trả 302 và cập nhật phiên/flash nếu có. Với Accept: application/json, lỗi validation trả 422; lỗi broker đặt lại mật khẩu vẫn có thể trả 302. Trình duyệt tự theo chuyển hướng nên Swagger có thể hiển thị HTML của trang đích.",
+                "security": [],
+                "responses": {
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "302": {
+                        "description": "Chuyển hướng sau xử lý.",
+                        "headers": {
+                            "Location": {
+                                "description": "URL đích.",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "token": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "ban@example.com",
+                                        "maxLength": 255
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "minLength": 8
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "minLength": 8
+                                    }
+                                },
+                                "required": [
+                                    "token",
+                                    "email",
+                                    "password",
+                                    "password_confirmation"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "token": {
+                                        "type": "string"
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "ban@example.com",
+                                        "maxLength": 255
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "minLength": 8
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "minLength": 8
+                                    }
+                                },
+                                "required": [
+                                    "token",
+                                    "email",
+                                    "password",
+                                    "password_confirmation"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/confirm-password": {
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Xác nhận mật khẩu",
+                "operationId": "post_confirm_password",
+                "description": "Endpoint web: thành công trả 302 và cập nhật phiên/flash nếu có. Với Accept: application/json, lỗi validation trả 422; lỗi broker đặt lại mật khẩu vẫn có thể trả 302. Trình duyệt tự theo chuyển hướng nên Swagger có thể hiển thị HTML của trang đích.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "302": {
+                        "description": "Chuyển hướng sau xử lý.",
+                        "headers": {
+                            "Location": {
+                                "description": "URL đích.",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    }
+                                },
+                                "required": [
+                                    "password"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    }
+                                },
+                                "required": [
+                                    "password"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/password": {
+            "put": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Đổi mật khẩu",
+                "operationId": "put_password",
+                "description": "Endpoint web: thành công trả 302 và cập nhật phiên/flash nếu có. Với Accept: application/json, lỗi validation trả 422; lỗi broker đặt lại mật khẩu vẫn có thể trả 302. Trình duyệt tự theo chuyển hướng nên Swagger có thể hiển thị HTML của trang đích.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "302": {
+                        "description": "Chuyển hướng sau xử lý.",
+                        "headers": {
+                            "Location": {
+                                "description": "URL đích.",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "current_password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "minLength": 8
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "minLength": 8
+                                    }
+                                },
+                                "required": [
+                                    "current_password",
+                                    "password",
+                                    "password_confirmation"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "current_password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "minLength": 8
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password",
+                                        "minLength": 8
+                                    }
+                                },
+                                "required": [
+                                    "current_password",
+                                    "password",
+                                    "password_confirmation"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/profile": {
+            "patch": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Cập nhật hồ sơ",
+                "operationId": "patch_profile",
+                "description": "Endpoint web: thành công trả 302 và cập nhật phiên/flash nếu có. Với Accept: application/json, lỗi validation trả 422; lỗi broker đặt lại mật khẩu vẫn có thể trả 302. Trình duyệt tự theo chuyển hướng nên Swagger có thể hiển thị HTML của trang đích.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "302": {
+                        "description": "Chuyển hướng sau xử lý.",
+                        "headers": {
+                            "Location": {
+                                "description": "URL đích.",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "maxLength": 255
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "ban@example.com",
+                                        "maxLength": 255
+                                    }
+                                }
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "maxLength": 255
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "ban@example.com",
+                                        "maxLength": 255
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Xóa tài khoản",
+                "operationId": "delete_profile",
+                "description": "Endpoint web: thành công trả 302 và cập nhật phiên/flash nếu có. Với Accept: application/json, lỗi validation trả 422; lỗi broker đặt lại mật khẩu vẫn có thể trả 302. Trình duyệt tự theo chuyển hướng nên Swagger có thể hiển thị HTML của trang đích.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "302": {
+                        "description": "Chuyển hướng sau xử lý.",
+                        "headers": {
+                            "Location": {
+                                "description": "URL đích.",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    }
+                                },
+                                "required": [
+                                    "password"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    }
+                                },
+                                "required": [
+                                    "password"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/email/verification-notification": {
+            "post": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Gửi lại email xác minh",
+                "operationId": "post_email_verification_notification",
+                "description": "Endpoint web: thành công trả 302 và cập nhật phiên/flash nếu có. Với Accept: application/json, lỗi validation trả 422; lỗi broker đặt lại mật khẩu vẫn có thể trả 302. Trình duyệt tự theo chuyển hướng nên Swagger có thể hiển thị HTML của trang đích.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Vượt giới hạn request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "302": {
+                        "description": "Chuyển hướng sau xử lý.",
+                        "headers": {
+                            "Location": {
+                                "description": "URL đích.",
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/user": {
+            "get": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Lấy tài khoản theo Bearer token",
+                "operationId": "get_api_user",
+                "description": "",
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/User"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Vượt giới hạn request.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/sanctum/csrf-cookie": {
+            "get": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Khởi tạo cookie CSRF",
+                "operationId": "get_sanctum_csrf_cookie",
+                "description": "Trả cookie XSRF-TOKEN và cookie phiên. Không đăng nhập và không cấp Bearer token.",
+                "security": [],
+                "responses": {
+                    "204": {
+                        "description": "Cookie CSRF đã được gửi."
+                    }
+                }
+            }
+        },
+        "/verify-email/{id}/{hash}": {
+            "get": {
+                "tags": [
+                    "Tài khoản"
+                ],
+                "summary": "Xác minh email bằng liên kết đã ký",
+                "operationId": "get_verify_email_id_hash",
+                "description": "Dùng URL đã ký từ email, gồm expires và signature; tự điền id/hash không tạo được chữ ký hợp lệ.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "302": {
+                        "description": "Chuyển đến dashboard?verified=1."
+                    },
+                    "403": {
+                        "description": "Chữ ký hoặc tài khoản không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "hash",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "expires",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "signature",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "Sanctum",
+                "description": "Nhập token thuần, không thêm tiền tố Bearer."
+            },
+            "sessionAuth": {
+                "type": "apiKey",
+                "in": "cookie",
+                "name": "chat_ca_nhan_session",
+                "description": "Đăng nhập ở /login cùng trình duyệt; trình duyệt tự gửi cookie. Không nhập cookie thủ công trong Authorize."
+            }
+        },
+        "schemas": {
+            "User": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "example": 1
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Nguyễn An"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "example": "ban@example.com"
+                    },
+                    "email_verified_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "nullable": true
+                    },
+                    "avatar": {
+                        "type": "string"
+                    },
+                    "active_status": {
+                        "type": "integer"
+                    },
+                    "dark_mode": {
+                        "type": "integer"
+                    },
+                    "messenger_color": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "max_created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "Message": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "from_id": {
+                        "type": "integer"
+                    },
+                    "to_id": {
+                        "type": "integer"
+                    },
+                    "seen": {
+                        "oneOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "integer",
+                                "enum": [
+                                    0,
+                                    1
+                                ]
+                            }
+                        ]
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "body": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "attachment": {
+                        "type": "string",
+                        "nullable": true,
+                        "description": "Chuỗi JSON {new_name, old_name}, hoặc null."
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "ParsedMessage": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "from_id": {
+                        "type": "integer"
+                    },
+                    "to_id": {
+                        "type": "integer"
+                    },
+                    "seen": {
+                        "oneOf": [
+                            {
+                                "type": "boolean"
+                            },
+                            {
+                                "type": "integer",
+                                "enum": [
+                                    0,
+                                    1
+                                ]
+                            }
+                        ]
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "message": {
+                        "type": "string"
+                    },
+                    "timeAgo": {
+                        "type": "string"
+                    },
+                    "isSender": {
+                        "type": "boolean"
+                    },
+                    "attachment": {
+                        "type": "object",
+                        "properties": {
+                            "file": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "title": {
+                                "type": "string",
+                                "nullable": true
+                            },
+                            "type": {
+                                "type": "string",
+                                "nullable": true,
+                                "enum": [
+                                    "image",
+                                    "file",
+                                    null
+                                ]
+                            }
+                        }
+                    }
+                }
+            },
+            "Favorite": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "user_id": {
+                        "type": "integer"
+                    },
+                    "favorite_id": {
+                        "type": "integer"
+                    },
+                    "user": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/User"
+                            }
+                        ],
+                        "nullable": true
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "Error": {
+                "type": "object",
+                "properties": {
+                    "message": {
+                        "type": "string"
+                    }
+                }
+            },
+            "ValidationError": {
+                "type": "object",
+                "properties": {
+                    "message": {
+                        "type": "string"
+                    },
+                    "errors": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

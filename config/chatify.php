@@ -1,12 +1,13 @@
 <?php
 
 return [
+    'transport' => env('CHAT_TRANSPORT', 'polling'),
     /*
     |-------------------------------------
     | Messenger display name
     |-------------------------------------
     */
-    'name' => env('CHATIFY_NAME', 'Chatify Messenger'),
+    'name' => env('CHATIFY_NAME', env('APP_NAME', 'Chat Cá Nhân')),
 
     /*
     |-------------------------------------
@@ -22,13 +23,13 @@ return [
     |-------------------------------------
     */
     'routes' => [
-        'prefix' => env('CHATIFY_ROUTES_PREFIX', 'chatify'),
+        'prefix' => env('CHATIFY_ROUTES_PREFIX', 'messages'),
         'middleware' => env('CHATIFY_ROUTES_MIDDLEWARE', ['web','auth']),
-        'namespace' => env('CHATIFY_ROUTES_NAMESPACE', 'Chatify\Http\Controllers'),
+        'namespace' => 'App\Http\Controllers\Chat',
     ],
     'api_routes' => [
-        'prefix' => env('CHATIFY_API_ROUTES_PREFIX', 'chatify/api'),
-        'middleware' => env('CHATIFY_API_ROUTES_MIDDLEWARE', ['api']),
+        'prefix' => env('CHATIFY_API_ROUTES_PREFIX', 'messages/api'),
+        'middleware' => ['api', 'auth:sanctum'],
         'namespace' => env('CHATIFY_API_ROUTES_NAMESPACE', 'Chatify\Http\Controllers\Api'),
     ],
 
@@ -67,7 +68,7 @@ return [
     |-------------------------------------
     */
     'gravatar' => [
-        'enabled' => true,
+        'enabled' => false,
         'image_size' => 200,
         'imageset' => 'identicon'
     ],

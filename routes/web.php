@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ApiDocumentationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -17,6 +18,12 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', function () {
     return view('welcome');
 });
+
+Route::get('/docs', [ApiDocumentationController::class, 'index'])->name('docs.index');
+Route::get('/docs/openapi.json', [ApiDocumentationController::class, 'specification'])->name('docs.openapi');
+Route::get('/docs/csrf', [ApiDocumentationController::class, 'csrf'])->name('docs.csrf');
+
+Route::post('/'.config('chatify.routes.prefix').'/poll', [\App\Http\Controllers\Chat\MessagesController::class, 'poll'])->middleware('auth')->name('messages.poll');
 
 Route::get('/dashboard', function () {
     return view('dashboard');

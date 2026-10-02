@@ -2,6 +2,8 @@
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
+    <h1 class="text-xl font-semibold mb-5">Đăng nhập tài khoản cá nhân</h1>
+    <p class="mb-5 text-sm"><a class="text-blue-600 underline" href="{{ route('register') }}">Chưa có tài khoản? Tạo tài khoản của bạn</a></p>
     <form method="POST" action="{{ route('login') }}">
         @csrf
 

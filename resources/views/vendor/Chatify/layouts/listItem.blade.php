@@ -1,4 +1,4 @@
-{{-- -------------------- Saved Messages -------------------- --}}
+{{-- -------------------- Ghi chú của tôi -------------------- --}}
 @if($get == 'saved')
     <table class="messenger-list-item" data-contact="{{ Auth::user()->id }}">
         <tr data-action="0">
@@ -10,8 +10,8 @@
             </td>
             {{-- center side --}}
             <td>
-                <p data-id="{{ Auth::user()->id }}" data-type="user">Saved Messages <span>You</span></p>
-                <span>Save messages secretly</span>
+                <p data-id="{{ Auth::user()->id }}" data-type="user">Ghi chú của tôi <span>Bạn</span></p>
+                <span>Lưu tin nhắn cho chính mình</span>
             </td>
         </tr>
     </table>
@@ -37,13 +37,13 @@ $lastMessageBody = strlen($lastMessageBody) > 30 ? mb_substr($lastMessageBody, 0
         {{-- center side --}}
         <td>
         <p data-id="{{ $user->id }}" data-type="user">
-            {{ strlen($user->name) > 12 ? trim(substr($user->name,0,12)).'..' : $user->name }}
+            {{ mb_strlen($user->name) > 18 ? mb_substr($user->name, 0, 18).'…' : $user->name }}
             <span class="contact-item-time" data-time="{{$lastMessage->created_at}}">{{ $lastMessage->timeAgo }}</span></p>
         <span>
             {{-- Last Message user indicator --}}
             {!!
                 $lastMessage->from_id == Auth::user()->id
-                ? '<span class="lastMessageIndicator">You :</span>'
+                ? '<span class="lastMessageIndicator">Bạn :</span>'
                 : ''
             !!}
             {{-- Last message body --}}
@@ -52,7 +52,7 @@ $lastMessageBody = strlen($lastMessageBody) > 30 ? mb_substr($lastMessageBody, 0
                 $lastMessageBody
             !!}
             @else
-            <span class="fas fa-file"></span> Attachment
+            <span class="fas fa-file"></span> Tệp đính kèm
             @endif
         </span>
         {{-- New messages counter --}}
@@ -75,7 +75,7 @@ $lastMessageBody = strlen($lastMessageBody) > 30 ? mb_substr($lastMessageBody, 0
         {{-- center side --}}
         <td>
             <p data-id="{{ $user->id }}" data-type="user">
-            {{ strlen($user->name) > 12 ? trim(substr($user->name,0,12)).'..' : $user->name }}
+            {{ mb_strlen($user->name) > 18 ? mb_substr($user->name, 0, 18).'…' : $user->name }}
         </td>
 
     </tr>

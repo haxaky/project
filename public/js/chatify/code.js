@@ -30,8 +30,10 @@ const setMessengerId = (id) => $("meta[name=id]").attr("content", id);
  * Pusher initialization
  *-------------------------------------------------------------
  */
-Pusher.logToConsole = chatify.pusher.debug;
-const pusher = new Pusher(chatify.pusher.key, {
+const usesPusher = chatify.transport === "pusher";
+// Local transport refreshes messages through HTTP; live events require Pusher.
+const localChannel = { bind() {}, trigger() { return false; } };
+const pusher = usesPusher ? new Pusher(chatify.pusher.key, {
   encrypted: chatify.pusher.options.encrypted,
   cluster: chatify.pusher.options.cluster,
   authEndpoint: chatify.pusherAuthEndpoint,
@@ -40,7 +42,7 @@ const pusher = new Pusher(chatify.pusher.key, {
       "X-CSRF-TOKEN": csrfToken,
     },
   },
-});
+}) : { subscribe: () => localChannel, connection: { bind() {} } };
 /**
  *-------------------------------------------------------------
  * Re-usable methods
@@ -464,14 +466,14 @@ function sendMessage() {
             .find(".messages")
             .append(
               sendTempMessageCard(
-                inputValue + "\n" + loadingSVG("28px"),
+                escapeHtml(inputValue) + "\n" + loadingSVG("28px"),
                 tempID
               )
             );
         } else {
           messagesContainer
             .find(".messages")
-            .append(sendTempMessageCard(inputValue, tempID));
+            .append(sendTempMessageCard(escapeHtml(inputValue), tempID));
         }
         // scroll to bottom
         scrollToBottom(messagesContainer);
@@ -482,10 +484,10 @@ function sendMessage() {
         messageInput.focus();
       },
       success: (data) => {
-        if (data.error > 0) {
+        if (data.error?.status > 0) {
           // message card error status
           errorMessageCard(tempID);
-          console.error(data.error_msg);
+          alert(data.error.message);
         } else {
           // update contact item
           updateContactItem(getMessengerId());
@@ -616,8 +618,8 @@ function cancelUpdatingAvatar() {
 // subscribe to the channel
 const channelName = "private-chatify";
 var channel = pusher.subscribe(`${channelName}.${auth_id}`);
-var clientSendChannel;
-var clientListenChannel;
+var clientSendChannel = localChannel;
+var clientListenChannel = localChannel;
 
 function initClientChannel() {
   if (getMessengerId()) {
@@ -1282,6 +1284,12 @@ $(document).ready(function () {
     });
   });
 
+  if (!usesPusher && getMessengerId() != 0) IDinfo(getMessengerId());
+  if (!usesPusher) setInterval(() => {
+    pollPersonalMessages();
+    pollPersonalContacts();
+  }, 2000);
+
   // tabs on click, show/hide...
   $(".messenger-listView-tabs a").on("click", function () {
     var dataView = $(this).attr("data-view");
@@ -1705,3 +1713,64 @@ function updateElementsDateToTimeAgo() {
 setInterval(() => {
   updateElementsDateToTimeAgo();
 }, 60000);
+
+let personalPolling = false;
+const personalSignatures = new Map();
+async function pollPersonalMessages() {
+  const id = getMessengerId();
+  if (personalPolling || document.hidden || !id || id == 0 || messagesLoading ||
+      messagesContainer.find('[data-id^="temp_"]').length) return;
+  personalPolling = true;
+  const messages = messagesContainer.find('.messages');
+  const limit = Math.min(10000, Math.max(30, Math.ceil(messages.find('.message-card').length / 30) * 30));
+  try {
+    const data = await $.ajax({
+      url: chatify.pollEndpoint, method: 'POST', dataType: 'JSON',
+      data: { _token: csrfToken, id, limit },
+    });
+    if (id != getMessengerId() || messagesLoading || messages.find('[data-id^="temp_"]').length) return;
+    if (personalSignatures.get(id) !== data.signature) {
+      const container = messagesContainer[0];
+      const atBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+      const oldHeight = container.scrollHeight;
+      const oldTop = container.scrollTop;
+      messages.html(data.messages);
+      personalSignatures.set(id, data.signature);
+      noMoreMessages = data.total <= limit;
+      messagesPage = Math.floor(limit / 30) + 1;
+      if (atBottom) scrollToBottom(messagesContainer);
+      else container.scrollTop = Math.max(0, oldTop + container.scrollHeight - oldHeight);
+      makeSeen(true);
+    }
+    $('.internet-connection').hide();
+  } catch (error) {
+    if (error.status === 401 || error.status === 419) window.location.assign('/login');
+    else checkInternet('disconnected', $('.internet-connection'));
+  } finally {
+    personalPolling = false;
+  }
+}
+
+let personalContactsPolling = false;
+async function pollPersonalContacts() {
+  if (personalContactsPolling || document.hidden || contactsLoading) return;
+  personalContactsPolling = true;
+  const limit = Math.max(30, Math.ceil($('.listOfContacts .messenger-list-item').length / 30) * 30);
+  try {
+    const data = await $.ajax({
+      url: url + '/getContacts', method: 'GET', dataType: 'JSON',
+      data: { page: 1, per_page: limit },
+    });
+    if (contactsLoading) return;
+    $('.listOfContacts').html(data.contacts);
+    noMoreContacts = data.total <= limit;
+    contactsPage = Math.floor(limit / 30) + 1;
+    updateSelectedContact();
+    cssMediaQueries();
+  } catch (error) {
+    if (error.status === 401 || error.status === 419) window.location.assign('/login');
+    else checkInternet('disconnected', $('.internet-connection'));
+  } finally {
+    personalContactsPolling = false;
+  }
+}
