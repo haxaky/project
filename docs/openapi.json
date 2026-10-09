@@ -23,6 +23,10 @@
         {
             "name": "Tài khoản",
             "description": "Đăng nhập, đăng ký, mật khẩu và hồ sơ. Thành công thường trả HTTP 302."
+        },
+        {
+            "name": "Chat nhóm & Story",
+            "description": "Cookie phiên + CSRF. Chat nhóm chỉ dành cho thành viên; story hiển thị với người dùng đã đăng nhập trong 24 giờ."
         }
     ],
     "paths": {
@@ -3954,6 +3958,2462 @@
                         "required": true,
                         "schema": {
                             "type": "string"
+                        }
+                    }
+                ]
+            }
+        },
+        "/groups": {
+            "get": {
+                "tags": [
+                    "Chat nhóm & Story"
+                ],
+                "summary": "Danh sách nhóm trong Tin nhắn",
+                "operationId": "get_groups",
+                "description": "Accept: application/json trả dữ liệu; truy cập bằng trình duyệt chuyển về Tin nhắn.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "groups": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "owner_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "members_count": {
+                                                        "type": "integer"
+                                                    },
+                                                    "last_message": {
+                                                        "type": "string"
+                                                    },
+                                                    "updated_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "info_url": {
+                                                        "type": "string"
+                                                    },
+                                                    "messages_url": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Không có quyền thực hiện thao tác.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không tìm thấy; story có thể đã hết hạn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Chat nhóm & Story"
+                ],
+                "summary": "Tạo nhóm và mời thành viên",
+                "operationId": "post_groups",
+                "description": "",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Không có quyền thực hiện thao tác.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không tìm thấy; story có thể đã hết hạn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "group": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "owner_id": {
+                                                    "type": "integer"
+                                                },
+                                                "members": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "avatar": {
+                                                                "type": "string"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "messages_url": {
+                                                    "type": "string"
+                                                },
+                                                "members_url": {
+                                                    "type": "string"
+                                                },
+                                                "leave_url": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "302": {
+                        "description": "Chỉ request HTML: chuyển về Tin nhắn; Accept: application/json trả JSON, không chuyển trang."
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "maxLength": 100
+                                    },
+                                    "members": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "maxItems": 99,
+                                        "uniqueItems": true,
+                                        "items": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                },
+                                "required": [
+                                    "name",
+                                    "members"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "maxLength": 100
+                                    },
+                                    "members": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "maxItems": 99,
+                                        "uniqueItems": true,
+                                        "items": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                },
+                                "required": [
+                                    "name",
+                                    "members"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/groups/{group}": {
+            "get": {
+                "tags": [
+                    "Chat nhóm & Story"
+                ],
+                "summary": "Thông tin nhóm và thành viên",
+                "operationId": "get_groups_group",
+                "description": "",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "group": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "owner_id": {
+                                                    "type": "integer"
+                                                },
+                                                "members": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "avatar": {
+                                                                "type": "string"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "messages_url": {
+                                                    "type": "string"
+                                                },
+                                                "members_url": {
+                                                    "type": "string"
+                                                },
+                                                "leave_url": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Không có quyền thực hiện thao tác.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không tìm thấy; story có thể đã hết hạn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "group",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ]
+            }
+        },
+        "/groups/{group}/members": {
+            "post": {
+                "tags": [
+                    "Chat nhóm & Story"
+                ],
+                "summary": "Quản trị viên thêm thành viên (tối đa 100)",
+                "operationId": "post_groups_group_members",
+                "description": "",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "group": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "owner_id": {
+                                                    "type": "integer"
+                                                },
+                                                "members": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer"
+                                                            },
+                                                            "name": {
+                                                                "type": "string"
+                                                            },
+                                                            "avatar": {
+                                                                "type": "string"
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                                "messages_url": {
+                                                    "type": "string"
+                                                },
+                                                "members_url": {
+                                                    "type": "string"
+                                                },
+                                                "leave_url": {
+                                                    "type": "string"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Không có quyền thực hiện thao tác.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không tìm thấy; story có thể đã hết hạn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "302": {
+                        "description": "Chỉ request HTML: chuyển về Tin nhắn; Accept: application/json trả JSON, không chuyển trang."
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "members": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "maxItems": 99,
+                                        "uniqueItems": true,
+                                        "items": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                },
+                                "required": [
+                                    "members"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "members": {
+                                        "type": "array",
+                                        "minItems": 1,
+                                        "maxItems": 99,
+                                        "uniqueItems": true,
+                                        "items": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                },
+                                "required": [
+                                    "members"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "group",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ]
+            }
+        },
+        "/groups/{group}/membership": {
+            "delete": {
+                "tags": [
+                    "Chat nhóm & Story"
+                ],
+                "summary": "Rời nhóm; tự chuyển quyền quản trị nếu cần",
+                "operationId": "delete_groups_group_membership",
+                "description": "",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "left": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Không có quyền thực hiện thao tác.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không tìm thấy; story có thể đã hết hạn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "302": {
+                        "description": "Chỉ request HTML: chuyển về Tin nhắn; Accept: application/json trả JSON, không chuyển trang."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "group",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ]
+            }
+        },
+        "/groups/{group}/messages": {
+            "get": {
+                "tags": [
+                    "Chat nhóm & Story"
+                ],
+                "summary": "Lấy tối đa 50 tin nhắn nhóm",
+                "operationId": "get_groups_group_messages",
+                "description": "Không truyền con trỏ: 50 tin mới nhất. before: tải tin cũ. after: polling tin mới, thứ tự tăng dần. Không dùng cả hai cùng lúc.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "messages": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "body": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "user_id": {
+                                                        "type": "integer",
+                                                        "nullable": true
+                                                    },
+                                                    "user_name": {
+                                                        "type": "string"
+                                                    },
+                                                    "avatar": {
+                                                        "type": "string"
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "attachment_url": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "attachment_name": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "attachment_mime": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "has_more": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Không có quyền thực hiện thao tác.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không tìm thấy; story có thể đã hết hạn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "after",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 0
+                        }
+                    },
+                    {
+                        "name": "before",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1
+                        }
+                    },
+                    {
+                        "name": "group",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Chat nhóm & Story"
+                ],
+                "summary": "Gửi chữ hoặc tệp trong nhóm",
+                "operationId": "post_groups_group_messages",
+                "description": "Cần body hoặc file. Tệp tối đa 10 MB; ảnh, PDF, TXT, ZIP hoặc Office.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "message": {
+                                            "type": "object",
+                                            "properties": {
+                                                "id": {
+                                                    "type": "integer"
+                                                },
+                                                "body": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "user_id": {
+                                                    "type": "integer",
+                                                    "nullable": true
+                                                },
+                                                "user_name": {
+                                                    "type": "string"
+                                                },
+                                                "avatar": {
+                                                    "type": "string"
+                                                },
+                                                "created_at": {
+                                                    "type": "string",
+                                                    "format": "date-time"
+                                                },
+                                                "attachment_url": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "attachment_name": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                },
+                                                "attachment_mime": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Không có quyền thực hiện thao tác.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không tìm thấy; story có thể đã hết hạn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "body": {
+                                        "type": "string",
+                                        "maxLength": 5000
+                                    },
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "group",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ]
+            }
+        },
+        "/groups/{group}/messages/{message}/attachment": {
+            "get": {
+                "tags": [
+                    "Chat nhóm & Story"
+                ],
+                "summary": "Mở/tải tệp nhóm (chỉ thành viên)",
+                "operationId": "get_groups_group_messages_message_attachment",
+                "description": "",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tệp nhị phân.",
+                        "content": {
+                            "application/octet-stream": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Không có quyền thực hiện thao tác.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không tìm thấy; story có thể đã hết hạn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "group",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "message",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ]
+            }
+        },
+        "/stories": {
+            "get": {
+                "tags": [
+                    "Chat nhóm & Story"
+                ],
+                "summary": "Feed story cập nhật ngay trong Tin nhắn",
+                "operationId": "get_stories",
+                "description": "",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "stories": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "user_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "user_name": {
+                                                        "type": "string"
+                                                    },
+                                                    "avatar": {
+                                                        "type": "string"
+                                                    },
+                                                    "body": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "background": {
+                                                        "type": "string"
+                                                    },
+                                                    "media_url": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "is_video": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "music_url": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "music_title": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "music_start": {
+                                                        "type": "integer"
+                                                    },
+                                                    "music_duration": {
+                                                        "type": "integer"
+                                                    },
+                                                    "viewed": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "views_count": {
+                                                        "type": "integer",
+                                                        "nullable": true
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "expires_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "view_url": {
+                                                        "type": "string"
+                                                    },
+                                                    "viewers_url": {
+                                                        "type": "string"
+                                                    },
+                                                    "delete_url": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Không có quyền thực hiện thao tác.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không tìm thấy; story có thể đã hết hạn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Chat nhóm & Story"
+                ],
+                "summary": "Đăng story chữ, ảnh/video kèm nhạc trong 24 giờ",
+                "operationId": "post_stories",
+                "description": "Cần body, media, music hoặc music_token. Không gửi đồng thời music và music_token. Ảnh/video tối đa 20 MB; music trực tiếp tối đa 10 MB và chịu giới hạn PHP. Giao diện tải nhạc tới 50 MB qua music-uploads, cắt tệp MP3 thật rồi gửi token. Nhạc mặc định cắt 15 giây; feed luôn music_start=0 cho tệp đã cắt. Feed JSON cập nhật ngay, không rời Tin nhắn.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Không có quyền thực hiện thao tác.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không tìm thấy; story có thể đã hết hạn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "stories": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "user_id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "user_name": {
+                                                        "type": "string"
+                                                    },
+                                                    "avatar": {
+                                                        "type": "string"
+                                                    },
+                                                    "body": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "background": {
+                                                        "type": "string"
+                                                    },
+                                                    "media_url": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "is_video": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "music_url": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "music_title": {
+                                                        "type": "string",
+                                                        "nullable": true
+                                                    },
+                                                    "music_start": {
+                                                        "type": "integer"
+                                                    },
+                                                    "music_duration": {
+                                                        "type": "integer"
+                                                    },
+                                                    "viewed": {
+                                                        "type": "boolean"
+                                                    },
+                                                    "views_count": {
+                                                        "type": "integer",
+                                                        "nullable": true
+                                                    },
+                                                    "created_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "expires_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    },
+                                                    "view_url": {
+                                                        "type": "string"
+                                                    },
+                                                    "viewers_url": {
+                                                        "type": "string"
+                                                    },
+                                                    "delete_url": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "302": {
+                        "description": "Chỉ request HTML: chuyển về Tin nhắn; Accept: application/json trả JSON, không chuyển trang."
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "body": {
+                                        "type": "string",
+                                        "maxLength": 1000
+                                    },
+                                    "media": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "music": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    },
+                                    "music_token": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "music_title": {
+                                        "type": "string",
+                                        "maxLength": 100
+                                    },
+                                    "music_start": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 3600,
+                                        "default": 0
+                                    },
+                                    "music_duration": {
+                                        "type": "integer",
+                                        "minimum": 5,
+                                        "maximum": 30,
+                                        "default": 15
+                                    },
+                                    "background": {
+                                        "type": "string",
+                                        "enum": [
+                                            "indigo",
+                                            "rose",
+                                            "emerald",
+                                            "amber",
+                                            "slate"
+                                        ]
+                                    }
+                                },
+                                "required": [
+                                    "background"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/stories/music-uploads": {
+            "post": {
+                "tags": [
+                    "Chat nhóm & Story"
+                ],
+                "summary": "Khởi tạo tải nhạc từng phần, tránh giới hạn PHP 2 MB",
+                "operationId": "post_stories_music_uploads",
+                "description": "MP3/M4A/OGG/WAV; tối đa 3 lần tải dở mỗi tài khoản, hết hạn sau 1 giờ.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Không có quyền thực hiện thao tác.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không tìm thấy; story có thể đã hết hạn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "410": {
+                        "description": "Lần tải nhạc hết hạn sau một giờ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Phần nhạc không đúng thứ tự hoặc đã cắt xong.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Quá nhiều lần tải hoặc quá nhiều lần tải dở.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Máy chủ chưa có công cụ cắt nhạc hoặc đang bận.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "201": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "upload_url": {
+                                            "type": "string"
+                                        },
+                                        "finish_url": {
+                                            "type": "string"
+                                        },
+                                        "cancel_url": {
+                                            "type": "string"
+                                        },
+                                        "chunk_size": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "maxLength": 255
+                                    },
+                                    "size": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 52428800
+                                    },
+                                    "start": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 3600
+                                    },
+                                    "duration": {
+                                        "type": "integer",
+                                        "minimum": 5,
+                                        "maximum": 30
+                                    }
+                                },
+                                "required": [
+                                    "name",
+                                    "size",
+                                    "start",
+                                    "duration"
+                                ]
+                            }
+                        },
+                        "application/x-www-form-urlencoded": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "maxLength": 255
+                                    },
+                                    "size": {
+                                        "type": "integer",
+                                        "minimum": 1,
+                                        "maximum": 52428800
+                                    },
+                                    "start": {
+                                        "type": "integer",
+                                        "minimum": 0,
+                                        "maximum": 3600
+                                    },
+                                    "duration": {
+                                        "type": "integer",
+                                        "minimum": 5,
+                                        "maximum": 30
+                                    }
+                                },
+                                "required": [
+                                    "name",
+                                    "size",
+                                    "start",
+                                    "duration"
+                                ]
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/stories/music-uploads/{upload}/chunks": {
+            "post": {
+                "tags": [
+                    "Chat nhóm & Story"
+                ],
+                "summary": "Tải tuần tự từng phần nhạc 512 KB",
+                "operationId": "post_stories_music_uploads_upload_chunks",
+                "description": "Offset phải bằng received; phần cuối đúng số byte còn lại. Chỉ chủ lần tải được gửi.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "received": {
+                                            "type": "integer"
+                                        },
+                                        "size": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Không có quyền thực hiện thao tác.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không tìm thấy; story có thể đã hết hạn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "410": {
+                        "description": "Lần tải nhạc hết hạn sau một giờ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Phần nhạc không đúng thứ tự hoặc đã cắt xong.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Quá nhiều lần tải hoặc quá nhiều lần tải dở.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Máy chủ chưa có công cụ cắt nhạc hoặc đang bận.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "offset": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                    },
+                                    "chunk": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                },
+                                "required": [
+                                    "offset",
+                                    "chunk"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "upload",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ]
+            }
+        },
+        "/stories/music-uploads/{upload}/finish": {
+            "post": {
+                "tags": [
+                    "Chat nhóm & Story"
+                ],
+                "summary": "Cắt nhạc thành MP3 bằng FFmpeg rồi xóa bản gốc",
+                "operationId": "post_stories_music_uploads_upload_finish",
+                "description": "Cần tải đủ các phần. Token chỉ dùng một lần để đăng story của chính tài khoản tải lên.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "music_token": {
+                                            "type": "string",
+                                            "format": "uuid"
+                                        },
+                                        "music_duration": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Không có quyền thực hiện thao tác.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không tìm thấy; story có thể đã hết hạn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "410": {
+                        "description": "Lần tải nhạc hết hạn sau một giờ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Phần nhạc không đúng thứ tự hoặc đã cắt xong.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Quá nhiều lần tải hoặc quá nhiều lần tải dở.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Máy chủ chưa có công cụ cắt nhạc hoặc đang bận.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "upload",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ]
+            }
+        },
+        "/stories/music-uploads/{upload}": {
+            "delete": {
+                "tags": [
+                    "Chat nhóm & Story"
+                ],
+                "summary": "Hủy lần tải nhạc và xóa tệp tạm",
+                "operationId": "delete_stories_music_uploads_upload",
+                "description": "",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "deleted": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Không có quyền thực hiện thao tác.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không tìm thấy; story có thể đã hết hạn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "410": {
+                        "description": "Lần tải nhạc hết hạn sau một giờ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Phần nhạc không đúng thứ tự hoặc đã cắt xong.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Quá nhiều lần tải hoặc quá nhiều lần tải dở.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Máy chủ chưa có công cụ cắt nhạc hoặc đang bận.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "upload",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ]
+            }
+        },
+        "/stories/{story}/media": {
+            "get": {
+                "tags": [
+                    "Chat nhóm & Story"
+                ],
+                "summary": "Mở ảnh/video story còn hiệu lực",
+                "operationId": "get_stories_story_media",
+                "description": "",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tệp nhị phân.",
+                        "content": {
+                            "application/octet-stream": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Không có quyền thực hiện thao tác.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không tìm thấy; story có thể đã hết hạn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "story",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ]
+            }
+        },
+        "/stories/{story}/music": {
+            "get": {
+                "tags": [
+                    "Chat nhóm & Story"
+                ],
+                "summary": "Phát nhạc story còn hiệu lực",
+                "operationId": "get_stories_story_music",
+                "description": "",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Tệp nhị phân.",
+                        "content": {
+                            "application/octet-stream": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Không có quyền thực hiện thao tác.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không tìm thấy; story có thể đã hết hạn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "story",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ]
+            }
+        },
+        "/stories/{story}/view": {
+            "post": {
+                "tags": [
+                    "Chat nhóm & Story"
+                ],
+                "summary": "Đánh dấu đã xem story",
+                "operationId": "post_stories_story_view",
+                "description": "Không tính chủ tin; mỗi người chỉ có một bản ghi xem.",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "viewed": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Không có quyền thực hiện thao tác.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không tìm thấy; story có thể đã hết hạn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "story",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ]
+            }
+        },
+        "/stories/{story}/viewers": {
+            "get": {
+                "tags": [
+                    "Chat nhóm & Story"
+                ],
+                "summary": "Danh sách người xem (chỉ chủ story)",
+                "operationId": "get_stories_story_viewers",
+                "description": "",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "viewers": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "id": {
+                                                        "type": "integer"
+                                                    },
+                                                    "name": {
+                                                        "type": "string"
+                                                    },
+                                                    "viewed_at": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Không có quyền thực hiện thao tác.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không tìm thấy; story có thể đã hết hạn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "story",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ]
+            }
+        },
+        "/stories/{story}": {
+            "delete": {
+                "tags": [
+                    "Chat nhóm & Story"
+                ],
+                "summary": "Xóa story và tệp media/nhạc của mình",
+                "operationId": "delete_stories_story",
+                "description": "",
+                "security": [
+                    {
+                        "sessionAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Thành công.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "deleted": {
+                                            "type": "boolean"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Chưa xác thực hoặc token không hợp lệ (Accept: application/json).",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "419": {
+                        "description": "CSRF token thiếu/hết hạn. Swagger tự lấy token mới trong cùng phiên.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Không có quyền thực hiện thao tác.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Không tìm thấy; story có thể đã hết hạn.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Dữ liệu không hợp lệ.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ValidationError"
+                                }
+                            }
+                        }
+                    },
+                    "302": {
+                        "description": "Chỉ request HTML: chuyển về Tin nhắn; Accept: application/json trả JSON, không chuyển trang."
+                    }
+                },
+                "parameters": [
+                    {
+                        "name": "story",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
                         }
                     }
                 ]

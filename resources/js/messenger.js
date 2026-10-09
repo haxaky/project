@@ -3,6 +3,10 @@ import NProgress from 'nprogress';
 import 'nprogress/nprogress.css';
 import EmojiButton from '@joeattardi/emoji-button';
 import Pusher from 'pusher-js';
+import Alpine from 'alpinejs';
+import './social';
+import { initializeGroups } from './messenger-social';
+import '../css/social.css';
 
 Object.assign(window, { $, jQuery: $, NProgress, EmojiButton, Pusher });
 
@@ -17,5 +21,8 @@ async function initializeMessenger() {
             document.body.appendChild(script);
         });
     }
+    initializeGroups();
+    window.Alpine = Alpine;
+    Alpine.start();
 }
 initializeMessenger().catch(console.error);

@@ -67,9 +67,11 @@ function actionOnScroll(selector, callback, topScroll = false) {
 }
 function routerPush(title, url) {
   $("meta[name=url]").attr("content", url);
-  return window.history.pushState({}, title || document.title, url);
+  window.history.pushState({}, title || document.title, url);
+  window.dispatchEvent(new Event('messenger-route-change'));
 }
 function updateSelectedContact(user_id) {
+  if (window.messengerGroups?.activeId) return;
   $(document).find(".messenger-list-item").removeClass("m-list-active");
   $(document)
     .find(
@@ -371,6 +373,11 @@ function errorMessageCard(id) {
  *-------------------------------------------------------------
  */
 function IDinfo(id) {
+  if (window.messengerGroups?.activeId && (!id || id == 0)) return;
+  window.messengerGroups?.activatePersonal();
+  messenger = id || 0;
+  updateSelectedContact(id);
+  $(".header-avatar").text("");
   // clear temporary message id
   temporaryMsgId = 0;
   // clear typing now
@@ -389,6 +396,7 @@ function IDinfo(id) {
       data: { _token: csrfToken, id },
       dataType: "JSON",
       success: (data) => {
+        if (id != getMessengerId() || window.messengerGroups?.activeId) return;
         if (!data?.fetch) {
           NProgress.done();
           NProgress.remove();
@@ -441,6 +449,7 @@ function IDinfo(id) {
  *-------------------------------------------------------------
  */
 function sendMessage() {
+  if (window.messengerGroups?.activeId) return window.messengerGroups.send();
   temporaryMsgId += 1;
   let tempID = `temp_${temporaryMsgId}`;
   let hasFile = !!$(".upload-attachment").val();
@@ -539,6 +548,7 @@ function setMessagesLoading(loading = false) {
   messagesLoading = loading;
 }
 function fetchMessages(id, newFetch = false) {
+  if (window.messengerGroups?.activeId) return;
   if (newFetch) {
     messagesPage = 1;
     noMoreMessages = false;
@@ -556,6 +566,7 @@ function fetchMessages(id, newFetch = false) {
       },
       dataType: "JSON",
       success: (data) => {
+        if (id != getMessengerId() || window.messengerGroups?.activeId) return;
         setMessagesLoading(false);
         if (messagesPage == 1) {
           messagesElement.html(data.messages);
@@ -743,6 +754,8 @@ function isTyping(status) {
  *-------------------------------------------------------------
  */
 function makeSeen(status) {
+  if (window.messengerGroups?.activeId) return;
+  if (!getMessengerId() || getMessengerId() == 0) return;
   if (document?.hidden) {
     return;
   }
@@ -1405,7 +1418,7 @@ $(document).ready(function () {
     const { name: fileName, size: fileSize } = file;
     const fileExtension = fileName.split(".").pop();
     if (
-      !chatify.allAllowedExtensions.includes(
+      !(window.messengerGroups?.activeId ? ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'txt', 'zip', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'] : chatify.allAllowedExtensions).includes(
         fileExtension.toString().toLowerCase()
       )
     ) {
@@ -1414,7 +1427,7 @@ $(document).ready(function () {
       return false;
     }
     // Validate file size.
-    if (fileSize > chatify.maxUploadSize) {
+    if (fileSize > (window.messengerGroups?.activeId ? 10 * 1024 * 1024 : chatify.maxUploadSize)) {
       alert("File is too large!");
       return false;
     }
@@ -1428,6 +1441,7 @@ $(document).ready(function () {
 
   // typing indicator on [input] keyDown
   $("#message-form .m-send").on("keydown", () => {
+    if (window.messengerGroups?.activeId) return;
     if (typingNow < 1) {
       isTyping(true);
       typingNow = 1;
@@ -1717,6 +1731,7 @@ setInterval(() => {
 let personalPolling = false;
 const personalSignatures = new Map();
 async function pollPersonalMessages() {
+  if (window.messengerGroups?.activeId) return;
   const id = getMessengerId();
   if (personalPolling || document.hidden || !id || id == 0 || messagesLoading ||
       messagesContainer.find('[data-id^="temp_"]').length) return;
@@ -1728,7 +1743,7 @@ async function pollPersonalMessages() {
       url: chatify.pollEndpoint, method: 'POST', dataType: 'JSON',
       data: { _token: csrfToken, id, limit },
     });
-    if (id != getMessengerId() || messagesLoading || messages.find('[data-id^="temp_"]').length) return;
+    if (window.messengerGroups?.activeId || id != getMessengerId() || messagesLoading || messages.find('[data-id^="temp_"]').length) return;
     if (personalSignatures.get(id) !== data.signature) {
       const container = messagesContainer[0];
       const atBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
@@ -1774,3 +1789,35 @@ async function pollPersonalContacts() {
     personalContactsPolling = false;
   }
 }
+
+window.chatifyUI = {
+  activateGroup() {
+    setMessengerId(0);
+    messenger = 0;
+    messagesLoading = false;
+    noMoreMessages = true;
+    NProgress.done();
+    $(".messenger-infoView, .add-to-favorite, .typing-indicator").hide();
+    $(".messenger-list-item").removeClass("m-list-active");
+    messagesContainer.stop().css("opacity", "1");
+    $(".messenger-sendCard").show();
+    messageInput.removeAttr("readonly");
+    $("#message-form button, .upload-attachment").removeAttr("disabled");
+    this.resetComposer();
+  },
+  resetComposer() {
+    $("#message-form")[0].reset();
+    messageInput.val("").css("height", "42px");
+    cancelAttachment();
+  },
+  clearConversation() {
+    setMessengerId(0);
+    messenger = 0;
+    this.resetComposer();
+    disableOnLoad();
+    messagesContainer.css("opacity", "1").find(".messages").html('<p class="message-hint center-el"><span>Chọn cuộc trò chuyện hoặc tạo nhóm để nhắn tin.</span></p>');
+    $(".messenger-infoView").hide();
+    $(".m-header-messaging .user-name").text(chatify.name);
+    $(".header-avatar").text("").css("background-image", "");
+  },
+};

@@ -3,8 +3,8 @@
 <head>
 @include('Chatify::layouts.headLinks')
 </head>
-<body>
-<div class="messenger">
+<body x-data="storyFeed" @messenger-story-open.window="openByUser($event.detail)" @keydown.escape.window="if (active) close(); else if (composerOpen) closeComposer();" @keydown.right.window="if (active && !['INPUT', 'TEXTAREA', 'VIDEO'].includes($event.target.tagName)) next()" @keydown.left.window="if (active && !['INPUT', 'TEXTAREA', 'VIDEO'].includes($event.target.tagName)) previous()">
+<div class="messenger" :inert="active !== null || composerOpen">
     {{-- ----------------------Users/Groups lists side---------------------- --}}
     <div class="messenger-listView {{ !!$id ? 'conversation-active' : '' }}">
         {{-- Header and search bar --}}
@@ -13,12 +13,14 @@
                 <a href="#"><i class="fas fa-inbox"></i> <span class="messenger-headTitle">Tin nhắn</span> </a>
                 {{-- header buttons --}}
                 <nav class="m-header-right">
+                    <button type="button" class="messenger-create-group" data-create-group title="Tạo nhóm trò chuyện" aria-label="Tạo nhóm trò chuyện"><i class="fas fa-users"></i></button>
                     <a href="#"><i class="fas fa-cog settings-btn"></i></a>
                     <a href="#" class="listView-x"><i class="fas fa-times"></i></a>
                 </nav>
             </nav>
             {{-- Search input --}}
             <input type="text" class="messenger-search" placeholder="Tìm người dùng" />
+            @include('Chatify::layouts.storyStrip')
             {{-- Tabs --}}
             {{-- <div class="messenger-listView-tabs">
                 <a href="#" class="active-tab" data-view="users">
@@ -40,7 +42,8 @@
                {!! view('Chatify::layouts.listItem', ['get' => 'saved']) !!}
                {{-- Contact --}}
                <p class="messenger-title"><span>Cuộc trò chuyện</span></p>
-               <div class="listOfContacts" style="width: 100%;height: calc(100% - 272px);position: relative;"></div>
+               <div class="listOfGroups"></div>
+               <div class="listOfContacts" style="width: 100%;position: relative;"></div>
            </div>
              {{-- ---------------- [ Search Tab ] ---------------- --}}
            <div class="messenger-tab search-tab app-scroll" data-view="search">
@@ -80,6 +83,7 @@
                 <span class="ic-noInternet">Không kết nối được máy chủ</span>
             </div>
         </div>
+        <div id="group-chat-error" class="social-alert error" role="alert" hidden></div>
 
         {{-- Messaging area --}}
         <div class="m-body messages-container app-scroll">
@@ -110,12 +114,22 @@
             <p>Thông tin người dùng</p>
             <a href="#"><i class="fas fa-times"></i></a>
         </nav>
-        {!! view('Chatify::layouts.info')->render() !!}
+        <div class="personal-info-panel">{!! view('Chatify::layouts.info')->render() !!}</div>
+        <div class="group-info-panel" hidden>
+            <div class="group-info-avatar">👥</div>
+            <h3 data-group-name></h3>
+            <h4>Thành viên</h4>
+            <div data-group-members></div>
+            <button type="button" class="social-button secondary" data-add-members>Thêm thành viên</button>
+            <button type="button" class="social-button danger" data-leave-group>Rời nhóm</button>
+        </div>
     </div>
 </div>
 
 @include('Chatify::layouts.modals')
 @include('Chatify::layouts.footerLinks')
+<script>window.messengerSocial = {{ Illuminate\Support\Js::from($messengerSocial) }};</script>
+@include('Chatify::layouts.socialModals')
 
 </body>
 </html>

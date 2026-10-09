@@ -12,6 +12,7 @@ class OpenApi
         $this->chat(false);
         $this->chat(true);
         $this->accounts();
+        $this->social();
 
         return [
             'openapi' => '3.0.3',
@@ -30,6 +31,7 @@ class OpenApi
                 ['name' => 'Chat giao diện', 'description' => 'Cookie phiên + CSRF. Đăng nhập cùng trình duyệt trước khi thử.'],
                 ['name' => 'API Chatify', 'description' => 'Authorize bằng Sanctum token. Cookie đăng nhập giao diện không thay thế Bearer token trong cấu hình hiện tại.'],
                 ['name' => 'Tài khoản', 'description' => 'Đăng nhập, đăng ký, mật khẩu và hồ sơ. Thành công thường trả HTTP 302.'],
+                ['name' => 'Chat nhóm & Story', 'description' => 'Cookie phiên + CSRF. Chat nhóm chỉ dành cho thành viên; story hiển thị với người dùng đã đăng nhập trong 24 giờ.'],
             ],
             'paths' => $this->paths,
             'components' => [
@@ -188,6 +190,114 @@ class OpenApi
         unset($this->paths[$verify]['get']['responses']['200']);
         $this->paths[$verify]['get']['responses']['302'] = ['description' => 'Chuyển đến dashboard?verified=1.'];
         $this->paths[$verify]['get']['responses']['403'] = $this->error('Chữ ký hoặc tài khoản không hợp lệ.');
+    }
+
+    private function social(): void
+    {
+        $memberIds = ['type' => 'array', 'minItems' => 1, 'maxItems' => 99, 'uniqueItems' => true, 'items' => ['type' => 'integer']];
+        $message = $this->object([
+            'id' => ['type' => 'integer'], 'body' => ['type' => 'string', 'nullable' => true],
+            'user_id' => ['type' => 'integer', 'nullable' => true], 'user_name' => ['type' => 'string'],
+            'avatar' => ['type' => 'string'], 'created_at' => ['type' => 'string', 'format' => 'date-time'],
+            'attachment_url' => ['type' => 'string', 'nullable' => true], 'attachment_name' => ['type' => 'string', 'nullable' => true],
+            'attachment_mime' => ['type' => 'string', 'nullable' => true],
+        ]);
+        $tag = 'Chat nhóm & Story';
+        $group = $this->object([
+            'id' => ['type' => 'integer'], 'name' => ['type' => 'string'], 'owner_id' => ['type' => 'integer'],
+            'members' => ['type' => 'array', 'items' => $this->object(['id' => ['type' => 'integer'], 'name' => ['type' => 'string'], 'avatar' => ['type' => 'string']])],
+            'messages_url' => ['type' => 'string'], 'members_url' => ['type' => 'string'], 'leave_url' => ['type' => 'string'],
+        ]);
+        $story = $this->object([
+            'id' => ['type' => 'integer'], 'user_id' => ['type' => 'integer'], 'user_name' => ['type' => 'string'], 'avatar' => ['type' => 'string'],
+            'body' => ['type' => 'string', 'nullable' => true], 'background' => ['type' => 'string'], 'media_url' => ['type' => 'string', 'nullable' => true], 'is_video' => ['type' => 'boolean'],
+            'music_url' => ['type' => 'string', 'nullable' => true], 'music_title' => ['type' => 'string', 'nullable' => true], 'music_start' => ['type' => 'integer'], 'music_duration' => ['type' => 'integer'],
+            'viewed' => ['type' => 'boolean'], 'views_count' => ['type' => 'integer', 'nullable' => true],
+            'created_at' => ['type' => 'string', 'format' => 'date-time'], 'expires_at' => ['type' => 'string', 'format' => 'date-time'],
+            'view_url' => ['type' => 'string'], 'viewers_url' => ['type' => 'string'], 'delete_url' => ['type' => 'string'],
+        ]);
+        $this->operation('/groups', 'get', 'Danh sách nhóm trong Tin nhắn', $tag, [], [], $this->object(['groups' => ['type' => 'array', 'items' => $this->object([
+            'id' => ['type' => 'integer'], 'name' => ['type' => 'string'], 'owner_id' => ['type' => 'integer'], 'members_count' => ['type' => 'integer'],
+            'last_message' => ['type' => 'string'], 'updated_at' => ['type' => 'string', 'format' => 'date-time'], 'info_url' => ['type' => 'string'], 'messages_url' => ['type' => 'string'],
+        ])]]), 'sessionAuth', 'Accept: application/json trả dữ liệu; truy cập bằng trình duyệt chuyển về Tin nhắn.');
+        $this->operation('/groups/{group}', 'get', 'Thông tin nhóm và thành viên', $tag, [], [], $this->object(['group' => $group]), 'sessionAuth');
+        $this->operation('/groups', 'post', 'Tạo nhóm và mời thành viên', $tag,
+            ['name' => ['type' => 'string', 'maxLength' => 100], 'members' => $memberIds], ['name', 'members'], $this->object(['group' => $group]), 'sessionAuth');
+        $this->operation('/groups/{group}/members', 'post', 'Quản trị viên thêm thành viên (tối đa 100)', $tag,
+            ['members' => $memberIds], ['members'], $this->object(['group' => $group]), 'sessionAuth');
+        $this->operation('/groups/{group}/membership', 'delete', 'Rời nhóm; tự chuyển quyền quản trị nếu cần', $tag, [], [], $this->object(['left' => ['type' => 'boolean']]), 'sessionAuth');
+        $this->operation('/groups/{group}/messages', 'get', 'Lấy tối đa 50 tin nhắn nhóm', $tag,
+            ['after' => ['type' => 'integer', 'minimum' => 0], 'before' => ['type' => 'integer', 'minimum' => 1]], [],
+            $this->object(['messages' => ['type' => 'array', 'items' => $message], 'has_more' => ['type' => 'boolean']]), 'sessionAuth',
+            'Không truyền con trỏ: 50 tin mới nhất. before: tải tin cũ. after: polling tin mới, thứ tự tăng dần. Không dùng cả hai cùng lúc.');
+        $this->operation('/groups/{group}/messages', 'post', 'Gửi chữ hoặc tệp trong nhóm', $tag,
+            ['body' => ['type' => 'string', 'maxLength' => 5000], 'file' => ['type' => 'string', 'format' => 'binary']], [],
+            $this->object(['message' => $message]), 'sessionAuth', 'Cần body hoặc file. Tệp tối đa 10 MB; ảnh, PDF, TXT, ZIP hoặc Office.', true);
+        $this->paths['/groups/{group}/messages']['post']['responses']['201'] = $this->paths['/groups/{group}/messages']['post']['responses']['200'];
+        unset($this->paths['/groups/{group}/messages']['post']['responses']['200']);
+        $this->operation('/groups/{group}/messages/{message}/attachment', 'get', 'Mở/tải tệp nhóm (chỉ thành viên)', $tag, [], [], [], 'sessionAuth');
+        $this->operation('/stories', 'get', 'Feed story cập nhật ngay trong Tin nhắn', $tag, [], [], $this->object(['stories' => ['type' => 'array', 'items' => $story]]), 'sessionAuth');
+        $this->operation('/stories', 'post', 'Đăng story chữ, ảnh/video kèm nhạc trong 24 giờ', $tag,
+            ['body' => ['type' => 'string', 'maxLength' => 1000], 'media' => ['type' => 'string', 'format' => 'binary'],
+                'music' => ['type' => 'string', 'format' => 'binary'], 'music_token' => ['type' => 'string', 'format' => 'uuid'], 'music_title' => ['type' => 'string', 'maxLength' => 100],
+                'music_start' => ['type' => 'integer', 'minimum' => 0, 'maximum' => 3600, 'default' => 0], 'music_duration' => ['type' => 'integer', 'minimum' => 5, 'maximum' => 30, 'default' => 15],
+                'background' => ['type' => 'string', 'enum' => ['indigo', 'rose', 'emerald', 'amber', 'slate']]], ['background'], $this->object(['stories' => ['type' => 'array', 'items' => $story]]), 'sessionAuth',
+            'Cần body, media, music hoặc music_token. Không gửi đồng thời music và music_token. Ảnh/video tối đa 20 MB; music trực tiếp tối đa 10 MB và chịu giới hạn PHP. Giao diện tải nhạc tới 50 MB qua music-uploads, cắt tệp MP3 thật rồi gửi token. Nhạc mặc định cắt 15 giây; feed luôn music_start=0 cho tệp đã cắt. Feed JSON cập nhật ngay, không rời Tin nhắn.', true);
+        $this->operation('/stories/music-uploads', 'post', 'Khởi tạo tải nhạc từng phần, tránh giới hạn PHP 2 MB', $tag,
+            ['name' => ['type' => 'string', 'maxLength' => 255], 'size' => ['type' => 'integer', 'minimum' => 1, 'maximum' => 52428800],
+                'start' => ['type' => 'integer', 'minimum' => 0, 'maximum' => 3600], 'duration' => ['type' => 'integer', 'minimum' => 5, 'maximum' => 30]],
+            ['name', 'size', 'start', 'duration'], $this->object(['upload_url' => ['type' => 'string'], 'finish_url' => ['type' => 'string'], 'cancel_url' => ['type' => 'string'], 'chunk_size' => ['type' => 'integer']]), 'sessionAuth', 'MP3/M4A/OGG/WAV; tối đa 3 lần tải dở mỗi tài khoản, hết hạn sau 1 giờ.');
+        $this->operation('/stories/music-uploads/{upload}/chunks', 'post', 'Tải tuần tự từng phần nhạc 512 KB', $tag,
+            ['offset' => ['type' => 'integer', 'minimum' => 0], 'chunk' => ['type' => 'string', 'format' => 'binary']], ['offset', 'chunk'],
+            $this->object(['received' => ['type' => 'integer'], 'size' => ['type' => 'integer']]), 'sessionAuth', 'Offset phải bằng received; phần cuối đúng số byte còn lại. Chỉ chủ lần tải được gửi.', true);
+        $this->operation('/stories/music-uploads/{upload}/finish', 'post', 'Cắt nhạc thành MP3 bằng FFmpeg rồi xóa bản gốc', $tag, [], [],
+            $this->object(['music_token' => ['type' => 'string', 'format' => 'uuid'], 'music_duration' => ['type' => 'integer']]), 'sessionAuth', 'Cần tải đủ các phần. Token chỉ dùng một lần để đăng story của chính tài khoản tải lên.');
+        $this->operation('/stories/music-uploads/{upload}', 'delete', 'Hủy lần tải nhạc và xóa tệp tạm', $tag, [], [], $this->object(['deleted' => ['type' => 'boolean']]), 'sessionAuth');
+        $this->operation('/stories/{story}/media', 'get', 'Mở ảnh/video story còn hiệu lực', $tag, [], [], [], 'sessionAuth');
+        $this->operation('/stories/{story}/music', 'get', 'Phát nhạc story còn hiệu lực', $tag, [], [], [], 'sessionAuth');
+        $this->operation('/stories/{story}/view', 'post', 'Đánh dấu đã xem story', $tag, [], [], $this->object(['viewed' => ['type' => 'boolean']]), 'sessionAuth', 'Không tính chủ tin; mỗi người chỉ có một bản ghi xem.');
+        $this->operation('/stories/{story}/viewers', 'get', 'Danh sách người xem (chỉ chủ story)', $tag, [], [],
+            $this->object(['viewers' => ['type' => 'array', 'items' => $this->object([
+                'id' => ['type' => 'integer'], 'name' => ['type' => 'string'], 'viewed_at' => ['type' => 'string', 'format' => 'date-time'],
+            ])]]), 'sessionAuth');
+        $this->operation('/stories/{story}', 'delete', 'Xóa story và tệp media/nhạc của mình', $tag, [], [], $this->object(['deleted' => ['type' => 'boolean']]), 'sessionAuth');
+
+        foreach ($this->paths as $path => &$methods) {
+            foreach ($methods as $method => &$operation) {
+                if (($operation['tags'][0] ?? '') !== $tag) {
+                    continue;
+                }
+                foreach (['group', 'message', 'story', 'upload'] as $parameter) {
+                    if (str_contains($path, '{'.$parameter.'}')) {
+                        $operation['parameters'][] = ['name' => $parameter, 'in' => 'path', 'required' => true, 'schema' => $parameter === 'upload' ? ['type' => 'string', 'format' => 'uuid'] : ['type' => 'integer']];
+                    }
+                }
+                $operation['responses']['403'] = $this->error('Không có quyền thực hiện thao tác.');
+                $operation['responses']['404'] = $this->error('Không tìm thấy; story có thể đã hết hạn.');
+                $operation['responses']['422'] = ['description' => 'Dữ liệu không hợp lệ.', 'content' => ['application/json' => ['schema' => $this->ref('ValidationError')]]];
+                if (str_starts_with($path, '/stories/music-uploads')) {
+                    $operation['responses']['410'] = $this->error('Lần tải nhạc hết hạn sau một giờ.');
+                    $operation['responses']['409'] = $this->error('Phần nhạc không đúng thứ tự hoặc đã cắt xong.');
+                    $operation['responses']['429'] = $this->error('Quá nhiều lần tải hoặc quá nhiều lần tải dở.');
+                    $operation['responses']['503'] = $this->error('Máy chủ chưa có công cụ cắt nhạc hoặc đang bận.');
+                    if ($path === '/stories/music-uploads' && $method === 'post') {
+                        $operation['responses']['201'] = $operation['responses']['200'];
+                        unset($operation['responses']['200']);
+                    }
+
+                    continue;
+                }
+                if ($method === 'get' && (str_ends_with($path, '/media') || str_ends_with($path, '/music') || str_ends_with($path, '/attachment'))) {
+                    $operation['responses']['200'] = ['description' => 'Tệp nhị phân.', 'content' => ['application/octet-stream' => ['schema' => ['type' => 'string', 'format' => 'binary']]]];
+                } elseif (($method !== 'get' && ! str_ends_with($path, '/messages') && ! str_ends_with($path, '/view'))) {
+                    if ($method === 'post' && in_array($path, ['/groups', '/stories'], true)) {
+                        $operation['responses']['201'] = $operation['responses']['200'];
+                        unset($operation['responses']['200']);
+                    }
+                    $operation['responses']['302'] = ['description' => 'Chỉ request HTML: chuyển về Tin nhắn; Accept: application/json trả JSON, không chuyển trang.'];
+                }
+            }
+        }
     }
 
     private function operation(string $path, string $method, string $summary, string $tag, array $input, array $required, array $response, ?string $auth, string $description = '', bool $multipart = false): void

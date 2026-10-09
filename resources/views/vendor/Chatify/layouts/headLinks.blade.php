@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="{{ asset('favicon.svg') }}">
 <script src="{{ asset('js/chatify/font.awesome.min.js') }}"></script>
 <script src="{{ asset('js/chatify/autosize.js') }}"></script>
-@vite('resources/js/messenger.js')
 <link href="{{ asset('css/chatify/style.css') }}" rel="stylesheet">
 <link href="{{ asset('css/chatify/'.$dark_mode.'.mode.css') }}" rel="stylesheet">
+@vite('resources/js/messenger.js')
 <style>:root { --primary-color: {{ $messengerColor }}; } body { font-family: Arial, sans-serif; }</style>

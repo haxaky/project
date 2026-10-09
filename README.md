@@ -1,6 +1,6 @@
 # Chat Cá Nhân
 
-Ứng dụng trò chuyện phục vụ đồ án tốt nghiệp cá nhân: đăng ký/đăng nhập, hồ sơ cá nhân, nhắn tin, gửi tệp, yêu thích và ghi chú cho chính mình.
+Ứng dụng trò chuyện phục vụ đồ án tốt nghiệp cá nhân: đăng ký/đăng nhập, hồ sơ cá nhân, nhắn tin cá nhân/nhóm, gửi tệp, story 24 giờ, yêu thích và ghi chú cho chính mình.
 
 ## Chạy trên máy cá nhân
 
@@ -19,6 +19,20 @@ php artisan serve --host=127.0.0.1 --port=8000
 ```
 
 Nếu `.env` đã tồn tại thì giữ tệp đó, không sao chép đè. Mở http://127.0.0.1:8000 và chọn **Tạo tài khoản cá nhân**. Seeder không tạo tài khoản mặc định hoặc mật khẩu dùng chung. Dữ liệu nằm trong `database/personal.sqlite`, không dùng cơ sở dữ liệu MySQL của bản cũ.
+
+## Chat nhóm và Story
+
+Sau khi cập nhật mã nguồn, chạy `php artisan migrate` và `npm run build`. Tất cả nằm trong **Tin nhắn**: bấm biểu tượng nhóm ở đầu danh sách để tạo nhóm, chọn nhóm ngay trong danh sách trò chuyện và sử dụng cùng khung chat/ô nhập với nhắn tin cá nhân. Không có trang chat nhóm hoặc story riêng; URL cũ tự chuyển về Tin nhắn.
+
+- **Chat nhóm**: đặt tên và chọn ít nhất một tài khoản khác để mời; nhóm tối đa 100 thành viên. Gửi chữ/tệp tối đa 10 MB, tự cập nhật mỗi 2 giây và tải tin nhắn cũ. Chỉ thành viên đọc được tin nhắn/tải tệp. Quản trị viên thêm người; rời nhóm tự chuyển quyền quản trị, nhóm trống tự xóa.
+- **Story**: đăng chữ (tối đa 1.000 ký tự), chọn màu nền hoặc tải ảnh/video tối đa 20 MB (JPG, PNG, GIF, WebP, MP4, WebM). Mọi tài khoản đã đăng nhập có thể xem; không có danh sách bạn bè hay bộ lọc đối tượng trong phiên bản này.
+- Story nằm ở dải avatar phía trên danh sách trò chuyện, tự cập nhật mỗi 5 giây khi đang mở Tin nhắn. Avatar người có story được viền; bấm avatar để xem tin, bấm tên/dòng trò chuyện để nhắn tin. Đăng/xem story bằng hộp nổi, không rời màn hình chat. Có xem trước, chuyển tin, tạm dừng, viền tin chưa xem và danh sách người xem chỉ dành cho chủ tin; chủ tin có thể xóa. Story hết 24 giờ tự ẩn, đường dẫn media/nhạc cũng hết hiệu lực.
+- **Nhạc story**: chọn nguyên bài MP3, M4A, OGG hoặc WAV (tối đa 50 MB); ứng dụng tải từng phần 512 KB rồi **cắt thành tệp MP3 thật**, mặc định 15 giây từ đầu bài. Có thể chọn điểm bắt đầu và độ dài 5–30 giây; đoạn sát cuối bài chỉ giữ phần còn lại. Có tiến độ tải và trạng thái cắt nhạc. Chỉ lưu đoạn đã cắt, xóa bản gốc; tệp tải dở hết hạn sau một giờ và được dọn bằng `stories:prune`. Không cần tăng giới hạn upload PHP 2 MB cho nhạc trong giao diện. API upload trực tiếp `music` vẫn giới hạn 10 MB và chịu giới hạn PHP; giao diện dùng `music_token` qua các endpoint `/stories/music-uploads` để nhận tệp lớn. Có thể kết hợp chữ/ảnh/video hoặc đăng riêng nhạc. Nhạc tạm dừng cùng story và dừng khi chuyển/đóng tin; nếu trình duyệt chặn tự phát, bấm **Bật nhạc**. Chỉ tải nhạc bạn có quyền sử dụng; không có kho nhạc hay đồng bộ tài khoản Facebook.
+- Máy chủ cần **FFmpeg và FFprobe** trong `PATH` (máy hiện tại đã có). Có thể đặt đường dẫn tuyệt đối qua `FFMPEG_BINARY` và `FFPROBE_BINARY` trong `.env`; nếu đã cache cấu hình, chạy `php artisan config:clear`. Nhạc được chuyển thành MP3 stereo 160 kbps. Các phần tải và đoạn chờ đăng nằm trên disk `local`, chỉ tài khoản tải lên được dùng token; token chỉ dùng một lần và hết hạn sau một giờ.
+- Tệp nhóm/story lưu trên disk `local`, không công khai qua `/storage`. Story hết hạn được dọn bằng `php artisan stories:prune`; có lịch dọn mỗi giờ nếu chạy `php artisan schedule:work` hoặc cấu hình scheduler trên server. Không chạy scheduler vẫn tự ẩn story đúng hạn nhưng chưa xóa tệp cũ.
+- Với ảnh/video 20 MB, PHP/server vẫn cần `upload_max_filesize=20M` và `post_max_size=35M` (hoặc lớn hơn), rồi khởi động lại PHP. Nhạc trong giao diện tải riêng từng phần 512 KB nên không cần tăng hai giới hạn này. Giới hạn validation không vượt qua giới hạn upload của PHP/server.
+
+Kịch bản demo: tạo ba tài khoản, lập nhóm và gửi tin từ hai trình duyệt; đăng story chữ/ảnh, dùng tài khoản khác xem, rồi mở danh sách người xem bằng tài khoản chủ story. Các endpoint thao tác có trong Swagger ở `/docs`.
 
 ## Cá nhân hóa
 

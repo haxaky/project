@@ -2,6 +2,11 @@
 
 return [
 
+    'story_music' => [
+        'ffmpeg' => env('FFMPEG_BINARY', 'ffmpeg'),
+        'ffprobe' => env('FFPROBE_BINARY', 'ffprobe'),
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services
